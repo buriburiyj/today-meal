@@ -769,7 +769,7 @@
           body: JSON.stringify({ email, ...currentSchool, lat: myLat, lon: myLon, grade, classNm })
         });
         const data = await res.json();
-        if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; loadAcademies(email); loadDdays(email); }
+        if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.setItem('myEmail', email); loadAcademies(email); loadDdays(email); }
         else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
       } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 다시 시도해봐.'; }
     }
@@ -886,6 +886,12 @@
           classNm = localStorage.getItem('myClass') || null;
           showSchool();
         } catch (e) { }
+      }
+      const savedEmail = localStorage.getItem('myEmail');
+      if (savedEmail) {
+        document.getElementById('emailInput').value = savedEmail;
+        loadAcademies(savedEmail);
+        loadDdays(savedEmail);
       }
     });
   </script>
