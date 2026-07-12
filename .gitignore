@@ -1,0 +1,14 @@
+# 환경 변수 / 민감 정보
+.env
+.env.*
+!.env.example
+
+# 의존성 (추후 Vite 도입 시 생김)
+node_modules/
+
+# 빌드 결과물
+dist/
+
+# OS / 에디터
+.DS_Store
+.vscode/
