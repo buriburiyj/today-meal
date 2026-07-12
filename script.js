@@ -5,6 +5,12 @@ let myLat = null, myLon = null;
 let grade = null, classNm = null;
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 function applyTimeTheme() {
   const h = new Date().getHours(), body = document.body;
   body.className = '';
@@ -92,7 +98,7 @@ async function searchSchool() {
     const data = await res.json();
     if (!data.ok || !data.schools || !data.schools.length) { listEl.innerHTML = '<div class="info">검색 결과가 없어.</div>'; return; }
     window._rows = data.schools;
-    listEl.innerHTML = data.schools.map((s, i) => `<div class="school-item" onclick="selectSchool(${i})">${s.schoolName}<small>${s.address || ''}</small></div>`).join('');
+    listEl.innerHTML = data.schools.map((s, i) => `<div class="school-item" onclick="selectSchool(${i})">${escapeHtml(s.schoolName)}<small>${escapeHtml(s.address || '')}</small></div>`).join('');
   } catch (e) { listEl.innerHTML = '<div class="info">오류가 났어.</div>'; }
 }
 
@@ -220,7 +226,7 @@ function renderAcademyList() {
   if (!academies.length) { el.innerHTML = '<div class="info" style="padding:8px">아직 추가한 학원이 없어.</div>'; return; }
   el.innerHTML = academies.map((a, i) => {
     const dayStr = a.days.map(d => DAY_NAMES[d]).join('·');
-    return `<div class="academy-item"><div><div class="aname">${a.name}</div><div class="ainfo">${dayStr}요일 ${a.time || ''}</div></div><button class="adel" onclick="removeAcademy(${i})">삭제</button></div>`;
+    return `<div class="academy-item"><div><div class="aname">${escapeHtml(a.name)}</div><div class="ainfo">${dayStr}요일 ${a.time || ''}</div></div><button class="adel" onclick="removeAcademy(${i})">삭제</button></div>`;
   }).join('');
 }
 async function loadAcademies(email) {
@@ -270,7 +276,7 @@ function renderDdayList() {
   const sorted = [...ddays].map((d, i) => ({ ...d, i, diff: ddayDiff(d.date) })).sort((a, b) => a.diff - b.diff);
   el.innerHTML = sorted.map(d => {
     const label = d.diff === 0 ? 'D-DAY 🎉' : d.diff > 0 ? `D-${d.diff}` : `D+${Math.abs(d.diff)}`;
-    return `<div class="dd-item"><div><div class="ddname">${d.name}</div><div class="ddinfo">${d.date}</div></div><div style="display:flex;align-items:center"><span class="ddlabel">${label}</span><button class="adel" onclick="removeDday(${d.i})">삭제</button></div></div>`;
+    return `<div class="dd-item"><div><div class="ddname">${escapeHtml(d.name)}</div><div class="ddinfo">${d.date}</div></div><div style="display:flex;align-items:center"><span class="ddlabel">${label}</span><button class="adel" onclick="removeDday(${d.i})">삭제</button></div></div>`;
   }).join('');
 }
 async function loadDdays(email) {
@@ -359,7 +365,7 @@ function renderStudyChecklist() {
     <div class="study-item ${i.done ? 'done' : ''}">
       <label class="study-check">
         <input type="checkbox" ${i.done ? 'checked' : ''} onchange="toggleStudyItem(${i.id})">
-        <span class="study-text">${i.text}</span>
+        <span class="study-text">${escapeHtml(i.text)}</span>
       </label>
       <button class="adel" onclick="removeStudyItem(${i.id})">삭제</button>
     </div>`).join('');
