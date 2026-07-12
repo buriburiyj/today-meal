@@ -135,9 +135,14 @@ function showSchool() {
   document.getElementById('schoolView').style.display = 'block';
   document.getElementById('curSchoolName').textContent = currentSchool.schoolName;
   document.getElementById('subMsg').textContent = '';
-  document.getElementById('acMsg').textContent = '';
-  document.getElementById('ddMsg').textContent = '';
-  academies = []; selectedDays = []; ddays = [];
+  selectedDays = [];
+  const acDraft = loadAcademyDraft(), ddDraft = loadDdayDraft();
+  academies = acDraft || []; ddays = ddDraft || [];
+  const acMsg = document.getElementById('acMsg'), ddMsg = document.getElementById('ddMsg');
+  if (acDraft && acDraft.length) { acMsg.style.color = '#ea580c'; acMsg.textContent = "⚠️ 저장하지 않은 변경사항을 불러왔어. '학원 일정 저장'을 눌러 저장해줘."; }
+  else acMsg.textContent = '';
+  if (ddDraft && ddDraft.length) { ddMsg.style.color = '#ea580c'; ddMsg.textContent = "⚠️ 저장하지 않은 변경사항을 불러왔어. '디데이 저장'을 눌러 저장해줘."; }
+  else ddMsg.textContent = '';
   buildGradeClassSelectors();
   renderDayButtons(); renderAcademyList(); renderDdayList(); renderStudyChecklist();
   switchTab(localStorage.getItem('activeTab') || 'today');
@@ -210,6 +215,13 @@ function toggleDay(i) {
   else selectedDays.push(i);
   renderDayButtons();
 }
+function loadAcademyDraft() {
+  try { return JSON.parse(localStorage.getItem('academyDraft')); } catch (e) { return null; }
+}
+function saveAcademyDraft() {
+  if (academies.length) localStorage.setItem('academyDraft', JSON.stringify(academies));
+  else localStorage.removeItem('academyDraft');
+}
 function addAcademy() {
   const name = document.getElementById('acName').value.trim();
   const time = document.getElementById('acTime').value;
@@ -219,8 +231,9 @@ function addAcademy() {
   academies.push({ name, days: [...selectedDays].sort(), time });
   document.getElementById('acName').value = ''; document.getElementById('acTime').value = '';
   selectedDays = []; renderDayButtons(); renderAcademyList(); msg.textContent = '';
+  saveAcademyDraft();
 }
-function removeAcademy(i) { academies.splice(i, 1); renderAcademyList(); }
+function removeAcademy(i) { academies.splice(i, 1); renderAcademyList(); saveAcademyDraft(); }
 function renderAcademyList() {
   const el = document.getElementById('acList');
   if (!academies.length) { el.innerHTML = '<div class="info" style="padding:8px">아직 추가한 학원이 없어.</div>'; return; }
@@ -233,7 +246,7 @@ async function loadAcademies(email) {
   try {
     const res = await fetch(`${WORKER_URL}/getacademy?email=${encodeURIComponent(email)}`);
     const data = await res.json();
-    if (data.ok && data.academies) { academies = data.academies; renderAcademyList(); }
+    if (data.ok && data.academies && !localStorage.getItem('academyDraft')) { academies = data.academies; renderAcademyList(); }
   } catch (e) { }
 }
 async function saveAcademy() {
@@ -247,7 +260,7 @@ async function saveAcademy() {
       body: JSON.stringify({ email, academies })
     });
     const data = await res.json();
-    if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; }
+    if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.removeItem('academyDraft'); }
     else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
   } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어.'; }
 }
@@ -259,6 +272,13 @@ function ddayDiff(dateStr) {
   const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return Math.round((target - today0) / 86400000);
 }
+function loadDdayDraft() {
+  try { return JSON.parse(localStorage.getItem('ddayDraft')); } catch (e) { return null; }
+}
+function saveDdayDraft() {
+  if (ddays.length) localStorage.setItem('ddayDraft', JSON.stringify(ddays));
+  else localStorage.removeItem('ddayDraft');
+}
 function addDday() {
   const name = document.getElementById('ddName').value.trim();
   const date = document.getElementById('ddDate').value;
@@ -268,8 +288,9 @@ function addDday() {
   ddays.push({ name, date });
   document.getElementById('ddName').value = ''; document.getElementById('ddDate').value = '';
   renderDdayList(); msg.textContent = '';
+  saveDdayDraft();
 }
-function removeDday(i) { ddays.splice(i, 1); renderDdayList(); }
+function removeDday(i) { ddays.splice(i, 1); renderDdayList(); saveDdayDraft(); }
 function renderDdayList() {
   const el = document.getElementById('ddList');
   if (!ddays.length) { el.innerHTML = '<div class="info" style="padding:8px">아직 추가한 디데이가 없어.</div>'; return; }
@@ -283,7 +304,7 @@ async function loadDdays(email) {
   try {
     const res = await fetch(`${WORKER_URL}/getdday?email=${encodeURIComponent(email)}`);
     const data = await res.json();
-    if (data.ok && data.ddays) { ddays = data.ddays; renderDdayList(); }
+    if (data.ok && data.ddays && !localStorage.getItem('ddayDraft')) { ddays = data.ddays; renderDdayList(); }
   } catch (e) { }
 }
 async function saveDday() {
@@ -297,7 +318,7 @@ async function saveDday() {
       body: JSON.stringify({ email, ddays })
     });
     const data = await res.json();
-    if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; }
+    if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.removeItem('ddayDraft'); }
     else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
   } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어.'; }
 }
@@ -389,5 +410,12 @@ window.addEventListener('load', () => {
     document.getElementById('emailInput').value = savedEmail;
     loadAcademies(savedEmail);
     loadDdays(savedEmail);
+  }
+});
+
+window.addEventListener('beforeunload', e => {
+  if (localStorage.getItem('academyDraft') || localStorage.getItem('ddayDraft')) {
+    e.preventDefault();
+    e.returnValue = '';
   }
 });
