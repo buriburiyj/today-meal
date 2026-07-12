@@ -330,10 +330,29 @@ function removeStudyItem(id) {
     renderStudyChecklist();
   }
 }
+function calcStreak(log) {
+  let streak = 0;
+  const d = new Date();
+  const todaySuccess = log[todayKey()]?.items?.some(i => i.done);
+  if (!todaySuccess) d.setDate(d.getDate() - 1);
+  while (true) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const success = log[key]?.items?.some(i => i.done);
+    if (!success) break;
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
 function renderStudyChecklist() {
-  const items = loadStudyLog()[todayKey()]?.items || [];
+  const log = loadStudyLog();
+  const items = log[todayKey()]?.items || [];
   const done = items.filter(i => i.done).length;
   document.getElementById('studyProgress').textContent = `${done}/${items.length}`;
+  const streak = calcStreak(log);
+  const streakEl = document.getElementById('studyStreak');
+  streakEl.textContent = streak > 0 ? `🔥 ${streak}일 연속!` : '오늘도 시작해볼까?';
+  streakEl.style.color = streak > 0 ? '#ea580c' : '#64748b';
   const listEl = document.getElementById('studyList');
   if (!items.length) { listEl.innerHTML = '<div class="info" style="padding:8px">아직 추가한 학습 항목이 없어.</div>'; return; }
   listEl.innerHTML = items.map(i => `
