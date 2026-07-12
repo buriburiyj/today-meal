@@ -110,7 +110,7 @@ function buildGradeClassSelectors() {
   for (let g = 1; g <= 6; g++) go += `<option value="${g}" ${grade == g ? 'selected' : ''}>${g}학년</option>`;
   gs.innerHTML = go;
   let co = '<option value="">반</option>';
-  for (let c = 1; c <= 15; c++) co += `<option value="${c}" ${classNm == c ? 'selected' : ''}>${c}반</option>`;
+  for (let c = 1; c <= 10; c++) co += `<option value="${c}" ${classNm == c ? 'selected' : ''}>${c}반</option>`;
   cs.innerHTML = co;
 }
 
