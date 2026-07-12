@@ -418,6 +418,33 @@ button:active {
   margin-bottom: 10px;
 }
 
+.study-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.study-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.study-check input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.study-item.done .study-text {
+  text-decoration: line-through;
+  opacity: .5;
+}
+
 .btn-save {
   background: #16a34a;
 }

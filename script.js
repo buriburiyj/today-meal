@@ -133,7 +133,7 @@ function showSchool() {
   document.getElementById('ddMsg').textContent = '';
   academies = []; selectedDays = []; ddays = [];
   buildGradeClassSelectors();
-  renderDayButtons(); renderAcademyList(); renderDdayList();
+  renderDayButtons(); renderAcademyList(); renderDdayList(); renderStudyChecklist();
   loadMeal(); loadTimetable();
 }
 
@@ -287,6 +287,56 @@ async function saveDday() {
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; }
     else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
   } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어.'; }
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function loadStudyLog() {
+  try { return JSON.parse(localStorage.getItem('studyLog')) || {}; } catch (e) { return {}; }
+}
+function saveStudyLog(log) { localStorage.setItem('studyLog', JSON.stringify(log)); }
+function addStudyItem() {
+  const input = document.getElementById('studyInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const log = loadStudyLog();
+  const key = todayKey();
+  if (!log[key]) log[key] = { items: [] };
+  log[key].items.push({ id: Date.now(), text, source: 'manual', done: false });
+  saveStudyLog(log);
+  input.value = '';
+  renderStudyChecklist();
+}
+function toggleStudyItem(id) {
+  const log = loadStudyLog();
+  const item = log[todayKey()]?.items.find(i => i.id === id);
+  if (item) { item.done = !item.done; saveStudyLog(log); renderStudyChecklist(); }
+}
+function removeStudyItem(id) {
+  const log = loadStudyLog();
+  const key = todayKey();
+  if (log[key]) {
+    log[key].items = log[key].items.filter(i => i.id !== id);
+    saveStudyLog(log);
+    renderStudyChecklist();
+  }
+}
+function renderStudyChecklist() {
+  const items = loadStudyLog()[todayKey()]?.items || [];
+  const done = items.filter(i => i.done).length;
+  document.getElementById('studyProgress').textContent = `${done}/${items.length}`;
+  const listEl = document.getElementById('studyList');
+  if (!items.length) { listEl.innerHTML = '<div class="info" style="padding:8px">아직 추가한 학습 항목이 없어.</div>'; return; }
+  listEl.innerHTML = items.map(i => `
+    <div class="study-item ${i.done ? 'done' : ''}">
+      <label class="study-check">
+        <input type="checkbox" ${i.done ? 'checked' : ''} onchange="toggleStudyItem(${i.id})">
+        <span class="study-text">${i.text}</span>
+      </label>
+      <button class="adel" onclick="removeStudyItem(${i.id})">삭제</button>
+    </div>`).join('');
 }
 
 window.addEventListener('load', () => {
