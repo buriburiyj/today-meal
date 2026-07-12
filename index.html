@@ -46,49 +46,64 @@
           </div>
         </div>
       </div>
-      <div class="glass">
-        <div class="card-title">🍚 오늘 급식</div>
-        <div class="meal" id="mealContent"></div>
+
+      <div class="tab-bar">
+        <div class="tab-btn" data-tab="today" onclick="switchTab('today')">🍚 오늘</div>
+        <div class="tab-btn" data-tab="study" onclick="switchTab('study')">📝 학습</div>
+        <div class="tab-btn" data-tab="settings" onclick="switchTab('settings')">⚙️ 설정</div>
       </div>
-      <div class="glass">
-        <div class="card-title">📅 오늘 시간표</div>
-        <div class="timetable" id="timetableContent"></div>
-      </div>
-      <div class="glass">
-        <div class="card-title">📝 오늘의 학습 (<span id="studyProgress">0/0</span>)</div>
-        <div id="studyList"></div>
-        <input id="studyInput" placeholder="할 일 추가 (예: 영어 단어 20개)"
-          onkeydown="if(event.key==='Enter')addStudyItem()">
-        <button class="btn-add" onclick="addStudyItem()">+ 학습 항목 추가</button>
-      </div>
-      <div class="glass">
-        <div class="subscribe-box">
-          <div class="label">📬 매일 아침 메일로 받기</div>
-          <div class="desc">이메일을 넣으면 매일 아침 7시에 급식·날씨·시간표를 보내드려요. (학년·반을 먼저 골라주세요)</div>
-          <input id="emailInput" type="email" placeholder="이메일 주소 입력">
-          <button onclick="subscribe()">구독하기</button>
-          <div class="msg" id="subMsg"></div>
+
+      <div class="tab-panel" data-panel="today">
+        <div class="glass">
+          <div class="card-title">🍚 오늘 급식</div>
+          <div class="meal" id="mealContent"></div>
         </div>
-        <div class="academy-box">
-          <div class="label">🎒 내 학원 일정</div>
-          <div class="desc">먼저 구독하고, 학원을 추가하면 매일 아침 메일에 그날 학원이 나와요.</div>
-          <input id="acName" placeholder="학원 이름 (예: 수학학원)">
-          <div class="day-row" id="dayRow"></div>
-          <input id="acTime" type="time">
-          <button class="btn-add" onclick="addAcademy()">+ 학원 추가</button>
-          <div id="acList"></div>
-          <button class="btn-save" onclick="saveAcademy()">학원 일정 저장</button>
-          <div class="msg" id="acMsg"></div>
+        <div class="glass">
+          <div class="card-title">📅 오늘 시간표</div>
+          <div class="timetable" id="timetableContent"></div>
         </div>
-        <div class="dday-box">
-          <div class="label">🎯 디데이 (D-Day)</div>
-          <div class="desc">여름방학·시험처럼 기다리는 날을 넣으면 매일 며칠 남았는지 세어주고, 아침 메일에도 나와요.</div>
-          <input id="ddName" placeholder="이름 (예: 여름방학)">
-          <input id="ddDate" type="date">
-          <button class="btn-add-dd" onclick="addDday()">+ 디데이 추가</button>
-          <div id="ddList"></div>
-          <button class="btn-save" onclick="saveDday()">디데이 저장</button>
-          <div class="msg" id="ddMsg"></div>
+      </div>
+
+      <div class="tab-panel" data-panel="study">
+        <div class="glass">
+          <div class="card-title">📝 오늘의 학습 (<span id="studyProgress">0/0</span>)</div>
+          <div id="studyList"></div>
+          <input id="studyInput" placeholder="할 일 추가 (예: 영어 단어 20개)"
+            onkeydown="if(event.key==='Enter')addStudyItem()">
+          <button class="btn-add" onclick="addStudyItem()">+ 학습 항목 추가</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="settings">
+        <div class="glass">
+          <div class="subscribe-box">
+            <div class="label">📬 매일 아침 메일로 받기</div>
+            <div class="desc">이메일을 넣으면 매일 아침 7시에 급식·날씨·시간표를 보내드려요. (학년·반을 먼저 골라주세요)</div>
+            <input id="emailInput" type="email" placeholder="이메일 주소 입력">
+            <button onclick="subscribe()">구독하기</button>
+            <div class="msg" id="subMsg"></div>
+          </div>
+          <div class="academy-box">
+            <div class="label">🎒 내 학원 일정</div>
+            <div class="desc">먼저 구독하고, 학원을 추가하면 매일 아침 메일에 그날 학원이 나와요.</div>
+            <input id="acName" placeholder="학원 이름 (예: 수학학원)">
+            <div class="day-row" id="dayRow"></div>
+            <input id="acTime" type="time">
+            <button class="btn-add" onclick="addAcademy()">+ 학원 추가</button>
+            <div id="acList"></div>
+            <button class="btn-save" onclick="saveAcademy()">학원 일정 저장</button>
+            <div class="msg" id="acMsg"></div>
+          </div>
+          <div class="dday-box">
+            <div class="label">🎯 디데이 (D-Day)</div>
+            <div class="desc">여름방학·시험처럼 기다리는 날을 넣으면 매일 며칠 남았는지 세어주고, 아침 메일에도 나와요.</div>
+            <input id="ddName" placeholder="이름 (예: 여름방학)">
+            <input id="ddDate" type="date">
+            <button class="btn-add-dd" onclick="addDday()">+ 디데이 추가</button>
+            <div id="ddList"></div>
+            <button class="btn-save" onclick="saveDday()">디데이 저장</button>
+            <div class="msg" id="ddMsg"></div>
+          </div>
         </div>
       </div>
     </div>

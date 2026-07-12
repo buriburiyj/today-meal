@@ -134,7 +134,14 @@ function showSchool() {
   academies = []; selectedDays = []; ddays = [];
   buildGradeClassSelectors();
   renderDayButtons(); renderAcademyList(); renderDdayList(); renderStudyChecklist();
+  switchTab(localStorage.getItem('activeTab') || 'today');
   loadMeal(); loadTimetable();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('on', p.dataset.panel === name));
+  localStorage.setItem('activeTab', name);
 }
 
 function changeSchool() {

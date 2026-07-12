@@ -310,6 +310,37 @@ button:active {
   flex: 1;
 }
 
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 14px;
+}
+
+.tab-btn {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .55);
+  color: #475569;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab-btn.on {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.on {
+  display: block;
+}
+
 .subscribe-box {
   background: rgba(238, 242, 255, .85);
   border-radius: 16px;
