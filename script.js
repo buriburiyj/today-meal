@@ -1,5 +1,11 @@
 const WORKER_URL = "https://gitupsik-mail.buriburiyejun.workers.dev";
 
+async function fetchJson(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 let currentSchool = null, academies = [], selectedDays = [], ddays = [];
 let myLat = null, myLon = null;
 let grade = null, classNm = null;
@@ -44,7 +50,7 @@ async function renderWeather(lat, lon, locName) {
   const hero = document.getElementById('heroWeather');
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FSeoul&past_days=1&forecast_days=2`;
-    const res = await fetch(url); const d = await res.json();
+    const d = await fetchJson(url);
     const cur = d.current, day = d.daily;
     const tMax = Math.round(day.temperature_2m_max[1]), tMin = Math.round(day.temperature_2m_min[1]), yMax = Math.round(day.temperature_2m_max[0]);
     const rainProb = day.precipitation_probability_max[1];
@@ -72,7 +78,7 @@ async function renderWeather(lat, lon, locName) {
     <div class="hourly-scroll">${cells}</div>
   </div>`;
     loadAir(lat, lon);
-  } catch (e) { hero.innerHTML = `<div class="glass"><div class="info">날씨를 못 불러왔어.</div></div>`; }
+  } catch (e) { hero.innerHTML = `<div class="glass"><div class="info">날씨를 못 불러왔어. 잠시 후 다시 시도해줘.</div></div>`; }
 }
 
 async function loadAir(lat, lon) {
@@ -80,13 +86,12 @@ async function loadAir(lat, lon) {
   card.style.display = 'block';
   el.innerHTML = '<div class="skeleton" style="height:60px"></div>';
   try {
-    const res = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5&timezone=Asia%2FSeoul`);
-    const d = await res.json();
+    const d = await fetchJson(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5&timezone=Asia%2FSeoul`);
     const pm10 = Math.round(d.current.pm10), pm25 = Math.round(d.current.pm2_5);
     const i10 = airLevel(pm10, [30, 80, 150]), i25 = airLevel(pm25, [15, 35, 75]);
     const badge = (n, v, i) => `<div class="air-badge" style="background:${i.color}"><div class="name">${n}</div><div class="lv">${i.emoji} ${i.label}</div><div class="val">${v} ㎍/㎥</div></div>`;
     el.innerHTML = `<div class="air-scroll">${badge('미세먼지 PM10', pm10, i10)}${badge('초미세먼지 PM2.5', pm25, i25)}</div>`;
-  } catch (e) { el.innerHTML = '<div class="info">미세먼지를 못 불러왔어.</div>'; }
+  } catch (e) { el.innerHTML = '<div class="info">미세먼지를 못 불러왔어. 잠시 후 다시 시도해줘.</div>'; }
 }
 
 async function searchSchool() {
@@ -95,12 +100,11 @@ async function searchSchool() {
   const listEl = document.getElementById('schoolList');
   listEl.innerHTML = '<div class="info">검색 중...</div>';
   try {
-    const res = await fetch(`${WORKER_URL}/api/school?name=${encodeURIComponent(name)}`);
-    const data = await res.json();
+    const data = await fetchJson(`${WORKER_URL}/api/school?name=${encodeURIComponent(name)}`);
     if (!data.ok || !data.schools || !data.schools.length) { listEl.innerHTML = '<div class="info">검색 결과가 없어.</div>'; return; }
     window._rows = data.schools;
     listEl.innerHTML = data.schools.map((s, i) => `<div class="school-item" onclick="selectSchool(${i})">${escapeHtml(s.schoolName)}<small>${escapeHtml(s.address || '')}</small></div>`).join('');
-  } catch (e) { listEl.innerHTML = '<div class="info">오류가 났어.</div>'; }
+  } catch (e) { listEl.innerHTML = '<div class="info">학교를 검색하지 못했어. 잠시 후 다시 시도해줘.</div>'; }
 }
 
 function selectSchool(i) {
@@ -171,11 +175,10 @@ async function loadMeal() {
   const el = document.getElementById('mealContent');
   el.innerHTML = '<div class="info">불러오는 중...</div>';
   try {
-    const res = await fetch(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}`);
-    const data = await res.json();
+    const data = await fetchJson(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}`);
     if (!data.ok || !data.meal) { el.innerHTML = '<span class="info">오늘은 급식 정보가 없어.</span>'; return; }
     el.innerHTML = data.meal.replace(/<br><br>/g, '\n\n').replace(/<br>/g, '\n').replace(/<b>(.*?)<\/b>/g, '<span class="mmeal">$1</span>');
-  } catch (e) { el.textContent = '급식을 못 불러왔어.'; }
+  } catch (e) { el.innerHTML = '<span class="info">급식을 못 불러왔어. 잠시 후 다시 시도해줘.</span>'; }
 }
 
 async function loadTimetable() {
@@ -183,11 +186,10 @@ async function loadTimetable() {
   if (!grade || !classNm) { el.innerHTML = '<span class="info">학년·반을 선택하면 시간표가 나와요.</span>'; return; }
   el.innerHTML = '<div class="info">불러오는 중...</div>';
   try {
-    const res = await fetch(`${WORKER_URL}/api/timetable?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}&grade=${grade}&class=${classNm}`);
-    const data = await res.json();
+    const data = await fetchJson(`${WORKER_URL}/api/timetable?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}&grade=${grade}&class=${classNm}`);
     if (data.ok && data.timetable) { el.innerHTML = data.timetable.replace(/<br>/g, '\n'); generateAutoStudyItems(data.timetable); return; }
-  } catch (e) { }
-  el.innerHTML = '<span class="info">오늘 시간표 정보가 없어.</span>';
+    el.innerHTML = '<span class="info">오늘 시간표 정보가 없어.</span>';
+  } catch (e) { el.innerHTML = '<span class="info">시간표를 불러오지 못했어. 잠시 후 다시 시도해줘.</span>'; }
 }
 
 async function subscribe() {
@@ -198,14 +200,13 @@ async function subscribe() {
   if (!grade || !classNm) { msg.style.color = '#ef4444'; msg.textContent = '🎓 학년·반을 먼저 골라줘!'; return; }
   msg.style.color = '#64748b'; msg.textContent = '구독 처리 중...';
   try {
-    const res = await fetch(`${WORKER_URL}/subscribe`, {
+    const data = await fetchJson(`${WORKER_URL}/subscribe`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, ...currentSchool, lat: myLat, lon: myLon, grade, classNm })
     });
-    const data = await res.json();
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.setItem('myEmail', email); loadAcademies(email); loadDdays(email); }
     else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
-  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 다시 시도해봐.'; }
+  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 잠시 후 다시 시도해줘.'; }
 }
 
 function renderDayButtons() {
@@ -245,10 +246,12 @@ function renderAcademyList() {
 }
 async function loadAcademies(email) {
   try {
-    const res = await fetch(`${WORKER_URL}/getacademy?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
+    const data = await fetchJson(`${WORKER_URL}/getacademy?email=${encodeURIComponent(email)}`);
     if (data.ok && data.academies && !localStorage.getItem('academyDraft')) { academies = data.academies; renderAcademyList(); }
-  } catch (e) { }
+  } catch (e) {
+    const msg = document.getElementById('acMsg');
+    if (msg && !msg.textContent) { msg.style.color = '#ef4444'; msg.textContent = '학원 정보를 불러오지 못했어. 잠시 후 다시 시도해줘.'; }
+  }
 }
 async function saveAcademy() {
   const email = document.getElementById('emailInput').value.trim();
@@ -256,14 +259,13 @@ async function saveAcademy() {
   if (!email || !email.includes('@')) { msg.style.color = '#ef4444'; msg.textContent = '먼저 위에서 이메일 넣고 구독해줘!'; return; }
   msg.style.color = '#64748b'; msg.textContent = '저장 중...';
   try {
-    const res = await fetch(`${WORKER_URL}/setacademy`, {
+    const data = await fetchJson(`${WORKER_URL}/setacademy`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, academies })
     });
-    const data = await res.json();
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.removeItem('academyDraft'); }
     else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
-  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어.'; }
+  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 잠시 후 다시 시도해줘.'; }
 }
 
 function ddayDiff(dateStr) {
@@ -303,10 +305,12 @@ function renderDdayList() {
 }
 async function loadDdays(email) {
   try {
-    const res = await fetch(`${WORKER_URL}/getdday?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
+    const data = await fetchJson(`${WORKER_URL}/getdday?email=${encodeURIComponent(email)}`);
     if (data.ok && data.ddays && !localStorage.getItem('ddayDraft')) { ddays = data.ddays; renderDdayList(); }
-  } catch (e) { }
+  } catch (e) {
+    const msg = document.getElementById('ddMsg');
+    if (msg && !msg.textContent) { msg.style.color = '#ef4444'; msg.textContent = '디데이 정보를 불러오지 못했어. 잠시 후 다시 시도해줘.'; }
+  }
 }
 async function saveDday() {
   const email = document.getElementById('emailInput').value.trim();
@@ -314,14 +318,13 @@ async function saveDday() {
   if (!email || !email.includes('@')) { msg.style.color = '#ef4444'; msg.textContent = '먼저 위에서 이메일 넣고 구독해줘!'; return; }
   msg.style.color = '#64748b'; msg.textContent = '저장 중...';
   try {
-    const res = await fetch(`${WORKER_URL}/setdday`, {
+    const data = await fetchJson(`${WORKER_URL}/setdday`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, ddays })
     });
-    const data = await res.json();
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.removeItem('ddayDraft'); }
     else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
-  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어.'; }
+  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 잠시 후 다시 시도해줘.'; }
 }
 
 function todayKey() {
