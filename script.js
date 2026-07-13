@@ -91,13 +91,13 @@ async function loadAir(lat, lon) {
     const i10 = airLevel(pm10, [30, 80, 150]), i25 = airLevel(pm25, [15, 35, 75]);
     const badge = (n, v, i) => `<div class="air-badge" style="background:${i.color}"><div class="name">${n}</div><div class="lv">${i.emoji} ${i.label}</div><div class="val">${v} ㎍/㎥</div></div>`;
     el.innerHTML = `<div class="air-scroll">${badge('미세먼지 PM10', pm10, i10)}${badge('초미세먼지 PM2.5', pm25, i25)}</div>`;
-  } catch (e) { el.innerHTML = '<div class="info">미세먼지를 못 불러왔어. 잠시 후 다시 시도해줘.</div>'; }
+  } catch (e) { el.innerHTML = '<div class="info">미세먼지를 못 불러왔어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadAir(myLat, myLon)">다시 시도</button></div>'; }
 }
 
 async function searchSchool() {
   const name = document.getElementById('q').value.trim();
-  if (!name) { alert('학교 이름을 입력해줘!'); return; }
   const listEl = document.getElementById('schoolList');
+  if (!name) { listEl.innerHTML = '<div class="info">학교 이름을 입력해줘!</div>'; return; }
   listEl.innerHTML = '<div class="info">검색 중...</div>';
   try {
     const data = await fetchJson(`${WORKER_URL}/api/school?name=${encodeURIComponent(name)}`);
@@ -178,7 +178,7 @@ async function loadMeal() {
     const data = await fetchJson(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}`);
     if (!data.ok || !data.meal) { el.innerHTML = '<span class="info">오늘은 급식 정보가 없어.</span>'; return; }
     el.innerHTML = data.meal.replace(/<br><br>/g, '\n\n').replace(/<br>/g, '\n').replace(/<b>(.*?)<\/b>/g, '<span class="mmeal">$1</span>');
-  } catch (e) { el.innerHTML = '<span class="info">급식을 못 불러왔어. 잠시 후 다시 시도해줘.</span>'; }
+  } catch (e) { el.innerHTML = '<span class="info">급식을 못 불러왔어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadMeal()">다시 시도</button></span>'; }
 }
 
 async function loadTimetable() {
@@ -189,7 +189,7 @@ async function loadTimetable() {
     const data = await fetchJson(`${WORKER_URL}/api/timetable?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}&grade=${grade}&class=${classNm}`);
     if (data.ok && data.timetable) { el.innerHTML = data.timetable.replace(/<br>/g, '\n'); generateAutoStudyItems(data.timetable); return; }
     el.innerHTML = '<span class="info">오늘 시간표 정보가 없어.</span>';
-  } catch (e) { el.innerHTML = '<span class="info">시간표를 불러오지 못했어. 잠시 후 다시 시도해줘.</span>'; }
+  } catch (e) { el.innerHTML = '<span class="info">시간표를 불러오지 못했어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadTimetable()">다시 시도</button></span>'; }
 }
 
 async function subscribe() {
@@ -235,7 +235,10 @@ function addAcademy() {
   selectedDays = []; renderDayButtons(); renderAcademyList(); msg.textContent = '';
   saveAcademyDraft();
 }
-function removeAcademy(i) { academies.splice(i, 1); renderAcademyList(); saveAcademyDraft(); }
+function removeAcademy(i) {
+  if (!confirm('이 학원을 삭제할까?')) return;
+  academies.splice(i, 1); renderAcademyList(); saveAcademyDraft();
+}
 function renderAcademyList() {
   const el = document.getElementById('acList');
   if (!academies.length) { el.innerHTML = '<div class="info" style="padding:8px">아직 추가한 학원이 없어.</div>'; return; }
@@ -293,7 +296,10 @@ function addDday() {
   renderDdayList(); msg.textContent = '';
   saveDdayDraft();
 }
-function removeDday(i) { ddays.splice(i, 1); renderDdayList(); saveDdayDraft(); }
+function removeDday(i) {
+  if (!confirm('이 디데이를 삭제할까?')) return;
+  ddays.splice(i, 1); renderDdayList(); saveDdayDraft();
+}
 function renderDdayList() {
   const el = document.getElementById('ddList');
   if (!ddays.length) { el.innerHTML = '<div class="info" style="padding:8px">아직 추가한 디데이가 없어.</div>'; return; }
@@ -354,6 +360,7 @@ function toggleStudyItem(id) {
   if (item) { item.done = !item.done; log[todayKey()].touched = true; saveStudyLog(log); renderStudyChecklist(); }
 }
 function removeStudyItem(id) {
+  if (!confirm('이 학습 항목을 삭제할까?')) return;
   const log = loadStudyLog();
   const key = todayKey();
   if (log[key]) {
