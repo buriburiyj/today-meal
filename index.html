@@ -84,6 +84,19 @@
             <button onclick="subscribe()">구독하기</button>
             <div class="msg" id="subMsg"></div>
           </div>
+          <div class="login-box">
+            <div class="label">🔑 로그인</div>
+            <div class="desc">아래 학원·디데이를 저장하려면 로그인이 필요해요. 이메일로 로그인 링크를 보내드려요 (비밀번호 없음).</div>
+            <div id="loginLoggedOut">
+              <input id="loginEmailInput" type="email" placeholder="이메일 주소 입력">
+              <button onclick="requestLoginLink()">로그인 링크 받기</button>
+            </div>
+            <div id="loginLoggedIn" style="display:none">
+              <div class="login-status"><span id="loginEmailLabel"></span>으로 로그인됨</div>
+              <button class="btn-logout" onclick="logout()">로그아웃</button>
+            </div>
+            <div class="msg" id="loginMsg"></div>
+          </div>
           <div class="academy-box">
             <div class="label">🎒 내 학원 일정</div>
             <div class="desc">먼저 구독하고, 학원을 추가하면 매일 아침 메일에 그날 학원이 나와요.</div>

@@ -369,6 +369,44 @@ button:active {
   font-weight: 600;
 }
 
+.login-box {
+  background: rgba(240, 253, 250, .9);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.login-box .label {
+  font-weight: 800;
+  color: #0d9488;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.login-box .desc {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.login-status {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f766e;
+  margin-bottom: 10px;
+}
+
+.btn-logout {
+  width: auto;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
 .academy-box {
   background: rgba(255, 247, 237, .9);
   border-radius: 16px;

@@ -209,6 +209,68 @@ async function subscribe() {
   } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 잠시 후 다시 시도해줘.'; }
 }
 
+async function requestLoginLink() {
+  const email = document.getElementById('loginEmailInput').value.trim();
+  const msg = document.getElementById('loginMsg');
+  if (!email || !email.includes('@')) { msg.style.color = '#ef4444'; msg.textContent = '이메일을 제대로 입력해줘!'; return; }
+  msg.style.color = '#64748b'; msg.textContent = '로그인 링크 보내는 중...';
+  try {
+    const data = await fetchJson(`${WORKER_URL}/login/request`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; }
+    else { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + data.msg; }
+  } catch (e) { msg.style.color = '#ef4444'; msg.textContent = '❌ 오류가 났어. 잠시 후 다시 시도해줘.'; }
+}
+
+function handleLoginCallback() {
+  const hash = location.hash;
+  if (!hash.startsWith('#session=')) return;
+  const sessionToken = hash.slice('#session='.length);
+  const email = document.getElementById('loginEmailInput').value.trim() || localStorage.getItem('myEmail') || '';
+  localStorage.setItem('mySession', JSON.stringify({ token: sessionToken, email }));
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
+async function logout() {
+  const session = getSession();
+  if (session) {
+    try {
+      await fetch(`${WORKER_URL}/login/logout`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${session.token}` }
+      });
+    } catch (e) {}
+  }
+  localStorage.removeItem('mySession');
+  updateLoginUI();
+}
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem('mySession')); } catch (e) { return null; }
+}
+
+// 로그인 세션이 있으면 Authorization 헤더를, 없으면 빈 객체를 돌려준다.
+// 지금은 email 파라미터도 계속 같이 보내는 과도기라, 세션이 없어도 기존처럼 동작한다.
+function authHeaders() {
+  const session = getSession();
+  return session ? { 'Authorization': `Bearer ${session.token}` } : {};
+}
+
+function updateLoginUI() {
+  const session = getSession();
+  const loggedOut = document.getElementById('loginLoggedOut');
+  const loggedIn = document.getElementById('loginLoggedIn');
+  if (session) {
+    loggedOut.style.display = 'none';
+    loggedIn.style.display = 'block';
+    document.getElementById('loginEmailLabel').textContent = session.email;
+  } else {
+    loggedOut.style.display = 'block';
+    loggedIn.style.display = 'none';
+  }
+}
+
 function renderDayButtons() {
   document.getElementById('dayRow').innerHTML = DAY_NAMES.map((d, i) => `<div class="day-btn ${selectedDays.includes(i) ? 'on' : ''}" onclick="toggleDay(${i})">${d}</div>`).join('');
 }
@@ -249,7 +311,7 @@ function renderAcademyList() {
 }
 async function loadAcademies(email) {
   try {
-    const data = await fetchJson(`${WORKER_URL}/getacademy?email=${encodeURIComponent(email)}`);
+    const data = await fetchJson(`${WORKER_URL}/getacademy?email=${encodeURIComponent(email)}`, { headers: authHeaders() });
     if (data.ok && data.academies && !localStorage.getItem('academyDraft')) { academies = data.academies; renderAcademyList(); }
   } catch (e) {
     const msg = document.getElementById('acMsg');
@@ -263,7 +325,7 @@ async function saveAcademy() {
   msg.style.color = '#64748b'; msg.textContent = '저장 중...';
   try {
     const data = await fetchJson(`${WORKER_URL}/setacademy`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ email, academies })
     });
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.removeItem('academyDraft'); }
@@ -311,7 +373,7 @@ function renderDdayList() {
 }
 async function loadDdays(email) {
   try {
-    const data = await fetchJson(`${WORKER_URL}/getdday?email=${encodeURIComponent(email)}`);
+    const data = await fetchJson(`${WORKER_URL}/getdday?email=${encodeURIComponent(email)}`, { headers: authHeaders() });
     if (data.ok && data.ddays && !localStorage.getItem('ddayDraft')) { ddays = data.ddays; renderDdayList(); }
   } catch (e) {
     const msg = document.getElementById('ddMsg');
@@ -325,7 +387,7 @@ async function saveDday() {
   msg.style.color = '#64748b'; msg.textContent = '저장 중...';
   try {
     const data = await fetchJson(`${WORKER_URL}/setdday`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ email, ddays })
     });
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.removeItem('ddayDraft'); }
@@ -452,6 +514,8 @@ window.addEventListener('load', () => {
     loadAcademies(savedEmail);
     loadDdays(savedEmail);
   }
+  handleLoginCallback();
+  updateLoginUI();
 });
 
 window.addEventListener('beforeunload', e => {
