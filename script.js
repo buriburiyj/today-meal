@@ -419,7 +419,13 @@ function addStudyItem() {
 function toggleStudyItem(id) {
   const log = loadStudyLog();
   const item = log[todayKey()]?.items.find(i => i.id === id);
-  if (item) { item.done = !item.done; log[todayKey()].touched = true; saveStudyLog(log); renderStudyChecklist(); }
+  if (item) {
+    item.done = !item.done;
+    log[todayKey()].touched = true;
+    saveStudyLog(log);
+    renderStudyChecklist();
+    if (item.done) sendCheckin();
+  }
 }
 function removeStudyItem(id) {
   if (!confirm('이 학습 항목을 삭제할까?')) return;
@@ -473,15 +479,37 @@ function calcStreak(log) {
   }
   return streak;
 }
+// 로그인 상태에서만 오늘 체크인을 서버(D1)에 기록. 실패해도 조용히 무시 —
+// 로컬 체크리스트/스트릭은 이미 반영된 상태라 사용자 경험에 지장 없음.
+function sendCheckin() {
+  const session = getSession();
+  if (!session) return;
+  fetch(`${WORKER_URL}/checkin`, { method: 'POST', headers: authHeaders() })
+    .then(res => res.ok ? res.json() : null)
+    .then(data => { if (data?.ok) updateStreakDisplay(data.streak); })
+    .catch(() => {});
+}
+// 로그인 상태면 서버 스트릭으로 화면을 덮어씀. 로그인 안 했거나 실패하면
+// 방금 그려진 로컬 계산값(calcStreak)이 그대로 남는다.
+function renderStreak() {
+  const session = getSession();
+  if (!session) return;
+  fetchJson(`${WORKER_URL}/streak`, { headers: authHeaders() })
+    .then(data => { if (data.ok) updateStreakDisplay(data.streak); })
+    .catch(() => {});
+}
+function updateStreakDisplay(streak) {
+  const streakEl = document.getElementById('studyStreak');
+  streakEl.textContent = streak > 0 ? `🔥 ${streak}일 연속!` : '오늘도 시작해볼까?';
+  streakEl.style.color = streak > 0 ? '#ea580c' : '#64748b';
+}
 function renderStudyChecklist() {
   const log = loadStudyLog();
   const items = log[todayKey()]?.items || [];
   const done = items.filter(i => i.done).length;
   document.getElementById('studyProgress').textContent = `${done}/${items.length}`;
-  const streak = calcStreak(log);
-  const streakEl = document.getElementById('studyStreak');
-  streakEl.textContent = streak > 0 ? `🔥 ${streak}일 연속!` : '오늘도 시작해볼까?';
-  streakEl.style.color = streak > 0 ? '#ea580c' : '#64748b';
+  updateStreakDisplay(calcStreak(log));
+  renderStreak();
   const listEl = document.getElementById('studyList');
   if (!items.length) { listEl.innerHTML = '<div class="info" style="padding:8px">아직 추가한 학습 항목이 없어.</div>'; return; }
   listEl.innerHTML = items.map(i => `
