@@ -12,3 +12,8 @@ dist/
 # OS / 에디터
 .DS_Store
 .vscode/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
