@@ -580,6 +580,30 @@ button:active {
   margin-right: 10px;
 }
 
+.rank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.rank-item .rname {
+  font-weight: 700;
+}
+
+.rank-item .rstreak {
+  font-weight: 800;
+  color: #ea580c;
+}
+
+.rank-item.me {
+  background: #eef2ff;
+  border: 1.5px solid #4f46e5;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
   background-size: 200% 100%;

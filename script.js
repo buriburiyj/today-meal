@@ -486,7 +486,7 @@ function sendCheckin() {
   if (!session) return;
   fetch(`${WORKER_URL}/checkin`, { method: 'POST', headers: authHeaders() })
     .then(res => res.ok ? res.json() : null)
-    .then(data => { if (data?.ok) updateStreakDisplay(data.streak); })
+    .then(data => { if (data?.ok) { updateStreakDisplay(data.streak); loadRanking(); } })
     .catch(() => {});
 }
 // 로그인 상태면 서버 스트릭으로 화면을 덮어씀. 로그인 안 했거나 실패하면
@@ -523,6 +523,43 @@ function renderStudyChecklist() {
     </div>`).join('');
 }
 
+// 로그인 상태에서만 학교 랭킹을 불러온다. 게스트거나 실패해도 이 카드만
+// 안내 문구로 대체될 뿐, 다른 기능(급식·시간표·체크리스트 등)엔 영향 없음.
+function loadRanking() {
+  const msgEl = document.getElementById('rankMsg');
+  const listEl = document.getElementById('rankList');
+  const session = getSession();
+  if (!session) {
+    msgEl.textContent = '로그인하면 학교 랭킹을 볼 수 있어!';
+    listEl.innerHTML = '';
+    return;
+  }
+  msgEl.textContent = '불러오는 중...';
+  fetchJson(`${WORKER_URL}/ranking`, { headers: authHeaders() })
+    .then(data => {
+      if (data.ok) { renderRanking(data); return; }
+      msgEl.textContent = data.msg || '랭킹을 불러오지 못했어.';
+      listEl.innerHTML = '';
+    })
+    .catch(() => {
+      msgEl.textContent = '랭킹을 불러오지 못했어. 잠시 후 다시 시도해줘.';
+      listEl.innerHTML = '';
+    });
+}
+function renderRanking(data) {
+  const msgEl = document.getElementById('rankMsg');
+  const listEl = document.getElementById('rankList');
+  msgEl.textContent = data.myRank
+    ? `${data.schoolName} 안에서 내 순위: ${data.myRank}등 (🔥${data.myStreak}일)`
+    : `${data.schoolName} · 오늘 학습을 체크하면 랭킹에 올라가!`;
+  if (!data.list.length) { listEl.innerHTML = '<div class="info" style="padding:8px">아직 랭킹에 아무도 없어.</div>'; return; }
+  listEl.innerHTML = data.list.map(r => `
+    <div class="rank-item ${r.isMe ? 'me' : ''}">
+      <div class="rname">${r.rank}등 ${r.avatar} ${escapeHtml(r.display)}${r.isMe ? ' (나)' : ''}</div>
+      <div class="rstreak">🔥${r.streak}일</div>
+    </div>`).join('');
+}
+
 window.addEventListener('load', () => {
   applyTimeTheme();
   document.getElementById('topDate').textContent = todayKorean();
@@ -544,6 +581,7 @@ window.addEventListener('load', () => {
   }
   handleLoginCallback();
   updateLoginUI();
+  loadRanking();
 });
 
 window.addEventListener('beforeunload', e => {
