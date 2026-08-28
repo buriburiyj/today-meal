@@ -131,8 +131,24 @@ function onGradeClassChange() {
   if (currentSchool) {
     localStorage.setItem('myGrade', grade || '');
     localStorage.setItem('myClass', classNm || '');
+    syncProfile();
   }
   loadTimetable();
+}
+
+// 앱에서 학교나 학년/반을 바꿔도 서버는 구독 시점 값에 묶여 있다.
+// 그대로 두면 랭킹이 예전 학교로 나가므로 바뀔 때마다 맞춰준다.
+function syncProfile() {
+  const session = getSession();
+  if (!session || !currentSchool) return;
+  fetch(`${WORKER_URL}/profile`, {
+    method: 'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...currentSchool, grade, classNm })
+  })
+    .then(res => res.ok ? res.json() : null)
+    .then(data => { if (data?.ok) loadRanking(); })
+    .catch(() => {});
 }
 
 function showSchool() {
