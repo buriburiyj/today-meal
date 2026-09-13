@@ -6,3 +6,5 @@ wrangler.jsonc
 .assetsignore
 CLAUDE.md
 docs
+*.bak*
+*.bak*

@@ -418,7 +418,55 @@ function todayKey() {
 function loadStudyLog() {
   try { return JSON.parse(localStorage.getItem('studyLog')) || {}; } catch (e) { return {}; }
 }
-function saveStudyLog(log) { localStorage.setItem('studyLog', JSON.stringify(log)); }
+// ===== 학습 기록 서버 동기화 =====
+// 로컬 저장이 먼저다. 서버는 백업이라, 실패해도 화면은 그대로 동작해야 한다.
+let studyPushTimer = null;
+
+function saveStudyLog(log) {
+  localStorage.setItem('studyLog', JSON.stringify(log));
+  localStorage.setItem('studyLogAt', String(Date.now()));
+  queueStudyPush();
+}
+
+// 체크를 연달아 누를 때 요청이 쌓이지 않게 1.5초 모아서 한 번만 보낸다.
+function queueStudyPush() {
+  if (!getSession()) return;
+  clearTimeout(studyPushTimer);
+  studyPushTimer = setTimeout(pushStudyLog, 1500);
+}
+
+async function pushStudyLog() {
+  if (!getSession()) return;
+  try {
+    const res = await fetch(`${WORKER_URL}/studylog`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ log: loadStudyLog() })
+    });
+    const data = await res.json();
+    if (data.ok) localStorage.setItem('studyLogAt', String(data.updatedAt));
+  } catch (e) { /* 오프라인이어도 로컬 기록은 남아 있다 */ }
+}
+
+// 로그인 직후 호출. 로컬과 서버 중 최근에 저장된 쪽을 택한다.
+async function pullStudyLog() {
+  if (!getSession()) return;
+  try {
+    const res = await fetch(`${WORKER_URL}/studylog`, { headers: authHeaders() });
+    const data = await res.json();
+    if (!data.ok) return;
+    const localAt = +(localStorage.getItem('studyLogAt') || 0);
+    const serverAt = +(data.updatedAt || 0);
+    if (data.log && serverAt > localAt) {
+      localStorage.setItem('studyLog', JSON.stringify(data.log));
+      localStorage.setItem('studyLogAt', String(serverAt));
+      renderStudyChecklist();
+      renderWeeklyReport();
+    } else if (localAt > serverAt) {
+      pushStudyLog();   // 로컬이 더 최신이면 서버를 올려 맞춘다
+    }
+  } catch (e) {}
+}
 function addStudyItem() {
   const input = document.getElementById('studyInput');
   const text = input.value.trim();
@@ -606,6 +654,7 @@ window.addEventListener('load', () => {
   handleLoginCallback();
   updateLoginUI();
   loadHistory();
+  pullStudyLog();   // 로그인 상태면 서버 학습기록과 맞춘다 (로그아웃이면 내부에서 빠져나감)
 });
 
 window.addEventListener('beforeunload', e => {
