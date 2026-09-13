@@ -17,3 +17,6 @@ dist/
 .wrangler
 .dev.vars*
 !.dev.vars.example
+
+# 로컬 백업 파일
+*.bak*
