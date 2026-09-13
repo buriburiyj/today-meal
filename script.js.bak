@@ -29,30 +29,6 @@ function applyTimeTheme() {
   body.classList.add(theme);
   document.getElementById('greet').textContent = greet;
 }
-let viewDate = new Date();
-function ymd(d) { return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
-function dateKoreanOf(d) { const days=['일','월','화','수','목','금','토']; return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`; }
-function isToday(d) { return ymd(d) === ymd(new Date()); }
-function shiftDate(n) {
-  viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate() + n);
-  refreshDateView();
-  renderWeeklyReport();
-}
-function goToday() { viewDate = new Date(); refreshDateView(); }
-function refreshDateView() {
-  const el = document.getElementById('topDate');
-  if (el) el.textContent = dateKoreanOf(viewDate) + (isToday(viewDate) ? '' : ' · 오늘 아님');
-  const btn = document.getElementById('btnToday');
-  if (btn) btn.style.display = isToday(viewDate) ? 'none' : 'inline-block';
-  const hd = document.getElementById('headerDate');
-  if (hd) hd.textContent = todayKorean();
-  const label = isToday(viewDate) ? '오늘' : `${viewDate.getMonth()+1}월 ${viewDate.getDate()}일`;
-  const mt = document.getElementById('mealTitle');
-  if (mt) mt.textContent = `🍚 ${label} 급식`;
-  const tt = document.getElementById('ttTitle');
-  if (tt) tt.textContent = `📅 ${label} 시간표`;
-  if (currentSchool) { loadMeal(); loadTimetable(); loadUpcoming(); }
-}
 function todayKorean() { const d = new Date(); const days = ['일', '월', '화', '수', '목', '금', '토']; return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`; }
 function weatherDesc(c) { if (c === 0) return "맑음"; if (c <= 2) return "구름 조금"; if (c === 3) return "흐림"; if (c <= 48) return "안개"; if (c <= 67) return "비"; if (c <= 77) return "눈"; if (c <= 82) return "소나기"; return "궂은 날씨"; }
 function weatherEmoji(c) { if (c === 0) return "☀️"; if (c <= 2) return "🌤️"; if (c === 3) return "☁️"; if (c <= 48) return "🌫️"; if (c <= 67) return "🌧️"; if (c <= 77) return "❄️"; if (c <= 82) return "🌦️"; return "🌩️"; }
@@ -182,9 +158,6 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('on', p.dataset.panel === name));
   localStorage.setItem('activeTab', name);
-  // 탭에 들어올 때마다 최신 상태로 다시 그린다.
-  if (name === 'study' && typeof renderWeeklyReport === 'function') renderWeeklyReport();
-  if (name === 'today' && typeof loadUpcoming === 'function') loadUpcoming();
 }
 
 function changeSchool() {
@@ -202,8 +175,8 @@ async function loadMeal() {
   const el = document.getElementById('mealContent');
   el.innerHTML = '<div class="info">불러오는 중...</div>';
   try {
-    const data = await fetchJson(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}&date=${ymd(viewDate)}`);
-    if (!data.ok || !data.meal) { el.innerHTML = `<span class="info">${[0,6].includes(viewDate.getDay()) ? '주말에는 급식이 없어.' : '이 날은 급식 정보가 없어. (휴일일 수 있어)'}</span>`; return; }
+    const data = await fetchJson(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}`);
+    if (!data.ok || !data.meal) { el.innerHTML = '<span class="info">오늘은 급식 정보가 없어.</span>'; return; }
     el.innerHTML = data.meal.replace(/<br><br>/g, '\n\n').replace(/<br>/g, '\n').replace(/<b>(.*?)<\/b>/g, '<span class="mmeal">$1</span>');
   } catch (e) { el.innerHTML = '<span class="info">급식을 못 불러왔어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadMeal()">다시 시도</button></span>'; }
 }
@@ -213,9 +186,9 @@ async function loadTimetable() {
   if (!grade || !classNm) { el.innerHTML = '<span class="info">학년·반을 선택하면 시간표가 나와요.</span>'; return; }
   el.innerHTML = '<div class="info">불러오는 중...</div>';
   try {
-    const data = await fetchJson(`${WORKER_URL}/api/timetable?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}&grade=${grade}&class=${classNm}&date=${ymd(viewDate)}`);
-    if (data.ok && data.timetable) { el.innerHTML = data.timetable.replace(/<br>/g, '\n') + `<div class="info" style="margin-top:8px;font-size:12px">ℹ️ NEIS 등록 기준이라 실제 수업과 다를 수 있어요.</div>`; if (isToday(viewDate)) generateAutoStudyItems(data.timetable); return; }
-    el.innerHTML = `<span class="info">${[0,6].includes(viewDate.getDay()) ? '주말에는 시간표가 없어.' : '이 날은 시간표 정보가 없어.'}</span>`;
+    const data = await fetchJson(`${WORKER_URL}/api/timetable?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}&grade=${grade}&class=${classNm}`);
+    if (data.ok && data.timetable) { el.innerHTML = data.timetable.replace(/<br>/g, '\n'); generateAutoStudyItems(data.timetable); return; }
+    el.innerHTML = '<span class="info">오늘 시간표 정보가 없어.</span>';
   } catch (e) { el.innerHTML = '<span class="info">시간표를 불러오지 못했어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadTimetable()">다시 시도</button></span>'; }
 }
 
@@ -429,7 +402,7 @@ function todayKey() {
 function loadStudyLog() {
   try { return JSON.parse(localStorage.getItem('studyLog')) || {}; } catch (e) { return {}; }
 }
-function saveStudyLog(log) { localStorage.setItem('studyLog', JSON.stringify(log)); if (typeof renderWeeklyReport === 'function') renderWeeklyReport(); }
+function saveStudyLog(log) { localStorage.setItem('studyLog', JSON.stringify(log)); }
 function addStudyItem() {
   const input = document.getElementById('studyInput');
   const text = input.value.trim();
@@ -474,9 +447,7 @@ function extractSubjectsFromTimetable(html) {
 }
 function pickAutoSubjects(html) {
   const seen = new Set(), result = [];
-  for (const raw of extractSubjectsFromTimetable(html)) {
-    const subj = String(raw == null ? '' : raw).trim();
-    if (!subj || subj === 'null' || subj === 'undefined') continue;
+  for (const subj of extractSubjectsFromTimetable(html)) {
     if (EXCLUDED_SUBJECTS.includes(subj) || seen.has(subj)) continue;
     seen.add(subj); result.push(subj);
     if (result.length >= 5) break;
@@ -487,11 +458,7 @@ function generateAutoStudyItems(html) {
   const log = loadStudyLog();
   const key = todayKey();
   if (log[key]?.touched || log[key]?.autoGenerated) return;
-  // NEIS가 과목명을 null로 주는 날이 있어 'null 복습' 항목이 생기던 버그 방어
-  const subjects = (pickAutoSubjects(html) || [])
-    .map(x => String(x == null ? '' : x).trim())
-    .filter(x => x && x !== 'null' && x !== 'undefined');
-  if (!subjects.length) return;
+  const subjects = pickAutoSubjects(html);
   if (!log[key]) log[key] = { items: [] };
   subjects.forEach((s, i) => log[key].items.push({ id: Date.now() + i, text: `${s} 복습`, source: 'timetable', done: false }));
   log[key].autoGenerated = true;
@@ -595,7 +562,7 @@ function renderRanking(data) {
 
 window.addEventListener('load', () => {
   applyTimeTheme();
-  refreshDateView();
+  document.getElementById('topDate').textContent = todayKorean();
   loadMyLocationWeather();
   const saved = localStorage.getItem('mySchool');
   if (saved) {
@@ -604,14 +571,7 @@ window.addEventListener('load', () => {
       grade = localStorage.getItem('myGrade') || null;
       classNm = localStorage.getItem('myClass') || null;
       showSchool();
-      // 학교 복원 후에 호출해야 한다. refreshDateView는 복원 전에 돌 수 있다.
-      loadUpcoming();
     } catch (e) { }
-  }
-  const savedNick = localStorage.getItem('myNick');
-  if (savedNick) {
-    const ni = document.getElementById('nickInput');
-    if (ni) ni.value = savedNick;
   }
   const savedEmail = localStorage.getItem('myEmail');
   if (savedEmail) {
@@ -630,156 +590,3 @@ window.addEventListener('beforeunload', e => {
     e.returnValue = '';
   }
 });
-
-async function saveNickname() {
-  const msg = document.getElementById('loginMsg');
-  const nickname = (document.getElementById('nickInput').value || '').trim();
-  if (!nickname) { msg.style.color = '#ef4444'; msg.textContent = '별명을 입력해줘!'; return; }
-  if (!currentSchool) { msg.style.color = '#ef4444'; msg.textContent = '학교를 먼저 검색해서 골라줘!'; return; }
-  msg.style.color = '#475569'; msg.textContent = '저장 중...';
-  try {
-    const data = await fetchJson(`${WORKER_URL}/profile`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ ...currentSchool, grade, classNm, nickname })
-    });
-    if (data.ok) {
-      msg.style.color = '#16a34a';
-      msg.textContent = `별명이 "${nickname}"으로 저장됐어!`;
-      localStorage.setItem('myNick', nickname);
-      if (typeof loadRanking === 'function') loadRanking();
-    } else {
-      msg.style.color = '#ef4444';
-      msg.textContent = data.msg || '저장하지 못했어.';
-    }
-  } catch (e) {
-    msg.style.color = '#ef4444';
-    msg.textContent = '저장하지 못했어. 잠시 후 다시 시도해줘.';
-  }
-}
-
-// ===== 다가오는 일정 (오늘 화면 요약) =====
-// 색은 3단계만 쓴다. 빨강이 많으면 경고판처럼 보여 오히려 안 읽힌다.
-function urgencyOf(diff) {
-  if (diff <= 1) return { color: '#ef4444', label: diff === 0 ? '오늘' : '내일' };
-  if (diff <= 3) return { color: '#f97316', label: `${diff}일 뒤` };
-  return { color: '#64748b', label: `${diff}일 뒤` };
-}
-
-async function loadUpcoming() {
-  const card = document.getElementById('upcomingCard');
-  const list = document.getElementById('upcomingList');
-  if (!card || !list || !currentSchool) return;
-  const now = new Date();
-  const ym1 = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}`;
-  const nx = new Date(now.getFullYear(), now.getMonth()+1, 1);
-  const ym2 = `${nx.getFullYear()}${String(nx.getMonth()+1).padStart(2,'0')}`;
-  try {
-    const base = `office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}` + (grade ? `&grade=${grade}` : '');
-    const [a, b] = await Promise.all([
-      fetchJson(`${WORKER_URL}/api/calendar?${base}&month=${ym1}`).catch(() => null),
-      fetchJson(`${WORKER_URL}/api/calendar?${base}&month=${ym2}`).catch(() => null)
-    ]);
-    const all = [];
-    for (const r of [a, b]) if (r && r.ok && r.schedules) all.push(...r.schedules);
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const seen = new Set();
-    const items = [];
-    for (const ev of all.sort((x, y) => x.date.localeCompare(y.date))) {
-      const t = ev.date;
-      const d = new Date(+t.slice(0,4), +t.slice(4,6)-1, +t.slice(6,8));
-      const diff = Math.round((d - today) / 86400000);
-      if (diff < 0) continue;
-      // 주말 휴업일은 매주 반복돼 요약을 채우므로 제외한다.
-      if (ev.name.includes('토요휴업')) continue;
-      // 추석연휴처럼 같은 일정이 며칠 이어지면 한 줄로 합친다.
-      const base = ev.name.replace(/연휴$/, '');
-      const prev = items.find(x => x.name.replace(/연휴$/, '') === base);
-      if (prev) { prev.days = (prev.days || 1) + 1; continue; }
-      const k = t + ev.name;
-      if (seen.has(k)) continue;
-      seen.add(k);
-      items.push({ ...ev, name: base, diff, days: 1 });
-      if (items.length >= 3) break;
-    }
-    if (!items.length) { card.style.display = 'none'; return; }
-    list.innerHTML = items.map(it => {
-      const u = urgencyOf(it.diff);
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0">` +
-             `<span style="width:8px;height:8px;border-radius:50%;background:${u.color};flex:0 0 auto"></span>` +
-             `<span style="flex:1;color:#334155;font-size:15px">${escapeHtml(it.name)}${it.days > 1 ? ` <span style="color:#94a3b8;font-size:12px">${it.days}일간</span>` : ''}</span>` +
-             `<span style="color:${u.color};font-size:13px;font-weight:700">${u.label}</span></div>`;
-    }).join('');
-    card.style.display = 'block';
-  } catch (e) { card.style.display = 'none'; }
-}
-
-// ===== 주간 리포트 =====
-// 순위보다 개인 기록을 먼저 보여준다. 비교보다 자기 흐름이 중요하다.
-function dayKeyOf(d) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
-function bestStreakOf(log) {
-  const keys = Object.keys(log).filter(k => log[k]?.items?.some(i => i.done)).sort();
-  let best = 0, run = 0, prev = null;
-  for (const k of keys) {
-    const cur = new Date(k + 'T00:00:00');
-    if (prev && Math.round((cur - prev) / 86400000) === 1) run++;
-    else run = 1;
-    if (run > best) best = run;
-    prev = cur;
-  }
-  return best;
-}
-
-function renderWeeklyReport() {
-  const el = document.getElementById('weeklyReport');
-  if (!el) return;
-  const log = loadStudyLog();
-  const now = new Date();
-  // 이번 주 월요일부터
-  const mondayOffset = (now.getDay() + 6) % 7;
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
-
-  const DOWS = ['월','화','수','목','금','토','일'];
-  let studiedDays = 0, doneCount = 0, totalCount = 0;
-  let cells = '';
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
-    const items = log[dayKeyOf(d)]?.items || [];
-    const done = items.filter(x => x.done).length;
-    const future = d > now;
-    if (done > 0) studiedDays++;
-    doneCount += done;
-    totalCount += items.length;
-    const bg = done > 0 ? '#16a34a' : (future ? '#e2e8f0' : '#f1f5f9');
-    const fg = done > 0 ? '#fff' : '#94a3b8';
-    const mark = done > 0 ? '✓' : (future ? '' : '·');
-    cells += `<div style="text-align:center;flex:1">` +
-             `<div style="font-size:11px;color:#94a3b8;margin-bottom:3px">${DOWS[i]}</div>` +
-             `<div style="aspect-ratio:1;border-radius:8px;background:${bg};color:${fg};` +
-             `display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${mark}</div></div>`;
-  }
-
-  const rate = totalCount ? Math.round(doneCount / totalCount * 100) : 0;
-  const streak = calcStreak(log);
-  const best = bestStreakOf(log);
-
-  const stat = (label, value) =>
-    `<div style="flex:1;min-width:70px;text-align:center;padding:8px 4px">` +
-    `<div style="font-size:19px;font-weight:800;color:#1e293b">${value}</div>` +
-    `<div style="font-size:11px;color:#64748b;margin-top:2px">${label}</div></div>`;
-
-  el.innerHTML =
-    `<div style="display:flex;gap:4px;margin-bottom:10px">${cells}</div>` +
-    `<div style="display:flex;flex-wrap:wrap;background:#f8fafc;border-radius:10px">` +
-    stat('학습한 날', `${studiedDays}일`) +
-    stat('완료 항목', `${doneCount}개`) +
-    stat('완료율', `${rate}%`) +
-    `</div>` +
-    `<div style="display:flex;flex-wrap:wrap;background:#f8fafc;border-radius:10px;margin-top:6px">` +
-    stat('현재 연속', `🔥${streak}일`) +
-    stat('최고 기록', `🏅${best}일`) +
-    `</div>`;
-}

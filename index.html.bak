@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#4f46e5">
   <title>오늘급식</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest"
+    href='data:application/json,{"name":"오늘급식","short_name":"오늘급식","start_url":".","display":"standalone","background_color":"%234f46e5","theme_color":"%234f46e5","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><rect width=%27100%27 height=%27100%27 rx=%2722%27 fill=%27%234f46e5%27/><text x=%2750%27 y=%2772%27 font-size=%2762%27 text-anchor=%27middle%27>🍚</text></svg>","sizes":"any","type":"image/svg+xml"}]}'>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,7 +17,7 @@
     <div class="top">
       <div class="app-name">🍚 오늘급식</div>
       <div class="greet" id="greet">좋은 하루예요! 😊</div>
-      <div class="date" id="headerDate"></div>
+      <div class="date" id="topDate"></div>
     </div>
 
     <div id="heroWeather"></div>
@@ -53,23 +54,12 @@
       </div>
 
       <div class="tab-panel" data-panel="today">
-        <div class="glass" id="upcomingCard" style="display:none">
-          <div class="card-title">📌 다가오는 일정</div>
-          <div id="upcomingList"></div>
-        </div>
         <div class="glass">
-      <div class="date-nav" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:4px 0 10px">
-        <button onclick="shiftDate(-1)" style="width:auto;padding:6px 12px" aria-label="이전 날짜">◀</button>
-        <div class="date" id="topDate" style="min-width:180px;text-align:center"></div>
-        <button onclick="shiftDate(1)" style="width:auto;padding:6px 12px" aria-label="다음 날짜">▶</button>
-        <button id="btnToday" onclick="goToday()" style="width:auto;padding:6px 12px;display:none">오늘로</button>
-        <button onclick="location.href='/calendar.html'" style="width:auto;padding:6px 12px">📆 달력</button>
-      </div>
-          <div class="card-title" id="mealTitle">🍚 오늘 급식</div>
+          <div class="card-title">🍚 오늘 급식</div>
           <div class="meal" id="mealContent"></div>
         </div>
         <div class="glass">
-          <div class="card-title" id="ttTitle">📅 오늘 시간표</div>
+          <div class="card-title">📅 오늘 시간표</div>
           <div class="timetable" id="timetableContent"></div>
         </div>
       </div>
@@ -82,10 +72,6 @@
           <input id="studyInput" placeholder="할 일 추가 (예: 영어 단어 20개)"
             onkeydown="if(event.key==='Enter')addStudyItem()">
           <button class="btn-add" onclick="addStudyItem()">+ 학습 항목 추가</button>
-        </div>
-        <div class="glass">
-          <div class="card-title">📊 이번 주 나의 기록</div>
-          <div id="weeklyReport"></div>
         </div>
         <div class="glass">
           <div class="card-title">🏆 학교 랭킹</div>
@@ -112,8 +98,6 @@
             </div>
             <div id="loginLoggedIn" style="display:none">
               <div class="login-status"><span id="loginEmailLabel"></span>으로 로그인됨</div>
-              <input id="nickInput" placeholder="랭킹에 쓸 별명 (최대 12자)" maxlength="12">
-              <button class="btn-save" onclick="saveNickname()">별명 저장</button>
               <button class="btn-logout" onclick="logout()">로그아웃</button>
             </div>
             <div class="msg" id="loginMsg"></div>

@@ -16,7 +16,7 @@
     <div class="top">
       <div class="app-name">🍚 오늘급식</div>
       <div class="greet" id="greet">좋은 하루예요! 😊</div>
-      <div class="date" id="headerDate"></div>
+      <div class="date" id="topDate"></div>
     </div>
 
     <div id="heroWeather"></div>
@@ -53,23 +53,12 @@
       </div>
 
       <div class="tab-panel" data-panel="today">
-        <div class="glass" id="upcomingCard" style="display:none">
-          <div class="card-title">📌 다가오는 일정</div>
-          <div id="upcomingList"></div>
-        </div>
         <div class="glass">
-      <div class="date-nav" style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:4px 0 10px">
-        <button onclick="shiftDate(-1)" style="width:auto;padding:6px 12px" aria-label="이전 날짜">◀</button>
-        <div class="date" id="topDate" style="min-width:180px;text-align:center"></div>
-        <button onclick="shiftDate(1)" style="width:auto;padding:6px 12px" aria-label="다음 날짜">▶</button>
-        <button id="btnToday" onclick="goToday()" style="width:auto;padding:6px 12px;display:none">오늘로</button>
-        <button onclick="location.href='/calendar.html'" style="width:auto;padding:6px 12px">📆 달력</button>
-      </div>
-          <div class="card-title" id="mealTitle">🍚 오늘 급식</div>
+          <div class="card-title">🍚 오늘 급식</div>
           <div class="meal" id="mealContent"></div>
         </div>
         <div class="glass">
-          <div class="card-title" id="ttTitle">📅 오늘 시간표</div>
+          <div class="card-title">📅 오늘 시간표</div>
           <div class="timetable" id="timetableContent"></div>
         </div>
       </div>
@@ -82,10 +71,6 @@
           <input id="studyInput" placeholder="할 일 추가 (예: 영어 단어 20개)"
             onkeydown="if(event.key==='Enter')addStudyItem()">
           <button class="btn-add" onclick="addStudyItem()">+ 학습 항목 추가</button>
-        </div>
-        <div class="glass">
-          <div class="card-title">📊 이번 주 나의 기록</div>
-          <div id="weeklyReport"></div>
         </div>
         <div class="glass">
           <div class="card-title">🏆 학교 랭킹</div>
