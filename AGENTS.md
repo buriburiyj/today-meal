@@ -5,7 +5,9 @@
 ### 배포 정보
 
 - GitHub 저장소 `buriburiyj/today-meal`이 Cloudflare에 연동돼 있습니다.
-- **`main` 브랜치에 push하면 Cloudflare가 자동으로 감지해서 배포합니다.**
+- **배포는 수동입니다.** 작업 디렉터리에서 `npx wrangler deploy`를 실행해야 실제 사이트에 반영됩니다.
+- `main` 브랜치 push는 코드 보관용이며, push만으로는 배포되지 않습니다.
+- 확인 방법: `npx wrangler deployments list --name today-meal` 에서 Source가 `Unknown (deployment)`이면 수동 배포된 것입니다.
 - 실제 사이트 주소: https://today-meal.buriburiyejun.workers.dev/
 
 ---
