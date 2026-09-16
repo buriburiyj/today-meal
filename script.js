@@ -174,6 +174,8 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('on', p.dataset.panel === name));
   localStorage.setItem('activeTab', name);
+  // 숨어 있던 패널은 초기 로드 때 제대로 안 그려지는 경우가 있어, 열 때 다시 그린다.
+  if (name === 'study') { renderStudyChecklist(); renderWeeklyReport(); }
 }
 
 function changeSchool() {
@@ -543,6 +545,74 @@ function generateAutoStudyItems(html) {
   saveStudyLog(log);
   renderStudyChecklist();
 }
+// ===== 주간 학습 리포트 =====
+function dayKeyOf(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function bestStreakOf(log) {
+  const keys = Object.keys(log).filter(k => log[k]?.items?.some(i => i.done)).sort();
+  let best = 0, run = 0, prev = null;
+  for (const k of keys) {
+    const cur = new Date(k + 'T00:00:00');
+    if (prev && Math.round((cur - prev) / 86400000) === 1) run++;
+    else run = 1;
+    if (run > best) best = run;
+    prev = cur;
+  }
+  return best;
+}
+
+function renderWeeklyReport() {
+  const el = document.getElementById('weeklyReport');
+  if (!el) return;
+  const log = loadStudyLog();
+  const now = new Date();
+  // 이번 주 월요일부터
+  const mondayOffset = (now.getDay() + 6) % 7;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+
+  const DOWS = ['월','화','수','목','금','토','일'];
+  let studiedDays = 0, doneCount = 0, totalCount = 0;
+  let cells = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+    const items = log[dayKeyOf(d)]?.items || [];
+    const done = items.filter(x => x.done).length;
+    const future = d > now;
+    if (done > 0) studiedDays++;
+    doneCount += done;
+    totalCount += items.length;
+    const bg = done > 0 ? '#16a34a' : (future ? '#e2e8f0' : '#f1f5f9');
+    const fg = done > 0 ? '#fff' : '#94a3b8';
+    const mark = done > 0 ? '✓' : (future ? '' : '·');
+    cells += `<div style="text-align:center;flex:1">` +
+             `<div style="font-size:11px;color:#94a3b8;margin-bottom:3px">${DOWS[i]}</div>` +
+             `<div style="aspect-ratio:1;border-radius:8px;background:${bg};color:${fg};` +
+             `display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${mark}</div></div>`;
+  }
+
+  const rate = totalCount ? Math.round(doneCount / totalCount * 100) : 0;
+  const streak = calcStreak(log);
+  const best = bestStreakOf(log);
+
+  const stat = (label, value) =>
+    `<div style="flex:1;min-width:70px;text-align:center;padding:8px 4px">` +
+    `<div style="font-size:19px;font-weight:800;color:#1e293b">${value}</div>` +
+    `<div style="font-size:11px;color:#64748b;margin-top:2px">${label}</div></div>`;
+
+  el.innerHTML =
+    `<div style="display:flex;gap:4px;margin-bottom:10px">${cells}</div>` +
+    `<div style="display:flex;flex-wrap:wrap;background:#f8fafc;border-radius:10px">` +
+    stat('학습한 날', `${studiedDays}일`) +
+    stat('완료 항목', `${doneCount}개`) +
+    stat('완료율', `${rate}%`) +
+    `</div>` +
+    `<div style="display:flex;flex-wrap:wrap;background:#f8fafc;border-radius:10px;margin-top:6px">` +
+    stat('현재 연속', `🔥${streak}일`) +
+    stat('최고 기록', `🏅${best}일`) +
+    `</div>`;
+}
+
 function calcStreak(log) {
   let streak = 0;
   const d = new Date();
