@@ -187,13 +187,26 @@ function changeSchool() {
   document.getElementById('schoolList').innerHTML = '';
 }
 
+
+// 급식 메뉴의 괄호 숫자는 알레르기 유발 식품 번호다 (학교급식법 시행규칙 기준).
+const ALLERGY_NAMES = ['난류','우유','메밀','땅콩','대두','밀','고등어','게','새우',
+  '돼지고기','복숭아','토마토','아황산류','호두','닭고기','소고기','오징어','조개류','잣'];
+
+function allergyNote() {
+  const list = ALLERGY_NAMES.map((n, i) => `${i + 1}.${n}`).join(' · ');
+  return `<details style="margin-top:10px">
+    <summary class="info" style="font-size:12px;cursor:pointer;list-style:none">ℹ️ 숫자는 알레르기 유발 식품 번호예요 (눌러서 보기)</summary>
+    <div class="info" style="font-size:12px;line-height:1.7;margin-top:6px">${list}</div>
+  </details>`;
+}
+
 async function loadMeal() {
   const el = document.getElementById('mealContent');
   el.innerHTML = '<div class="info">불러오는 중...</div>';
   try {
     const data = await fetchJson(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}`);
     if (!data.ok || !data.meal) { el.innerHTML = '<span class="info">오늘은 급식 정보가 없어.</span>'; return; }
-    el.innerHTML = data.meal.replace(/<br><br>/g, '\n\n').replace(/<br>/g, '\n').replace(/<b>(.*?)<\/b>/g, '<span class="mmeal">$1</span>');
+    el.innerHTML = data.meal.replace(/<br><br>/g, '\n\n').replace(/<br>/g, '\n').replace(/<b>(.*?)<\/b>/g, '<span class="mmeal">$1</span>') + allergyNote();
   } catch (e) { el.innerHTML = '<span class="info">급식을 못 불러왔어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadMeal()">다시 시도</button></span>'; }
 }
 
