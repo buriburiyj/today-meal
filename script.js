@@ -202,13 +202,68 @@ function allergyNote() {
   </details>`;
 }
 
+function loadMyAllergy() {
+  try { return JSON.parse(localStorage.getItem('myAllergy')) || []; } catch (e) { return []; }
+}
+function saveMyAllergy(arr) { localStorage.setItem('myAllergy', JSON.stringify(arr)); }
+
+function toggleAllergy(n) {
+  const cur = loadMyAllergy();
+  const i = cur.indexOf(n);
+  if (i >= 0) cur.splice(i, 1); else cur.push(n);
+  saveMyAllergy(cur);
+  applyAllergyHighlight();
+}
+
+function allergyPicker() {
+  return `<div style="margin-top:12px">
+    <div class="info" style="font-size:12px;margin-bottom:6px">내 알레르기를 누르면 급식에서 빨갛게 표시돼요</div>
+    <div id="allergyBtns" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+  </div>`;
+}
+
+function renderAllergyButtons() {
+  const box = document.getElementById('allergyBtns');
+  if (!box) return;
+  const on = loadMyAllergy();
+  box.innerHTML = ALLERGY_NAMES.map((name, i) => {
+    const n = i + 1;
+    const hit = on.includes(n);
+    return `<button type="button" onclick="toggleAllergy(${n})" style="width:auto;padding:6px 10px;font-size:12px;border:none;border-radius:999px;cursor:pointer;background:${hit ? '#ef4444' : '#f1f5f9'};color:${hit ? '#fff' : '#475569'}">${n}.${name}</button>`;
+  }).join('');
+}
+
+function applyAllergyHighlight() {
+  renderAllergyButtons();
+  const on = loadMyAllergy();
+  document.querySelectorAll('#mealContent .mitem').forEach(el => {
+    const nums = (el.dataset.al || '').split(',').filter(Boolean).map(Number);
+    const hit = nums.some(n => on.includes(n));
+    el.style.color = hit ? '#ef4444' : '';
+    el.style.fontWeight = hit ? '700' : '';
+  });
+}
+
+function renderMealHtml(meal) {
+  return meal.split('<br>').map(part => {
+    const t = part.trim();
+    if (!t) return '';
+    const b = t.match(/^<b>(.*?)<\/b>$/);
+    if (b) return `<span class="mmeal">${b[1]}</span>`;
+    const m = t.match(/\(([0-9.]+)\)/);
+    const nums = m ? m[1].split('.').filter(Boolean).join(',') : '';
+    return `<span class="mitem" data-al="${nums}">${t}</span>`;
+  }).join('\n');
+}
+
 async function loadMeal() {
   const el = document.getElementById('mealContent');
   el.innerHTML = '<div class="info">불러오는 중...</div>';
   try {
     const data = await fetchJson(`${WORKER_URL}/api/meal?office=${currentSchool.officeCode}&school=${currentSchool.schoolCode}`);
     if (!data.ok || !data.meal) { el.innerHTML = '<span class="info">오늘은 급식 정보가 없어.</span>'; return; }
-    el.innerHTML = data.meal.replace(/<br><br>/g, '\n\n').replace(/<br>/g, '\n').replace(/<b>(.*?)<\/b>/g, '<span class="mmeal">$1</span>') + allergyNote();
+    el.innerHTML = renderMealHtml(data.meal) + allergyNote() + allergyPicker();
+    applyAllergyHighlight();
   } catch (e) { el.innerHTML = '<span class="info">급식을 못 불러왔어. 잠시 후 다시 시도해줘.<br><button style="margin-top:10px;width:auto;padding:8px 16px" onclick="loadMeal()">다시 시도</button></span>'; }
 }
 
