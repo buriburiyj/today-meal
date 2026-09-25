@@ -279,7 +279,7 @@ async function loadTimetable() {
 }
 
 async function subscribe() {
-  const email = document.getElementById('emailInput').value.trim();
+  const email = document.getElementById('emailInput').value.trim().toLowerCase();
   const msg = document.getElementById('subMsg');
   if (!email || !email.includes('@')) { msg.style.color = '#ef4444'; msg.textContent = '이메일을 제대로 입력해줘!'; return; }
   if (!myLat || !myLon) { msg.style.color = '#ef4444'; msg.textContent = '📍 위치를 먼저 허용해줘! (날씨를 넣으려면 필요해)'; return; }
@@ -287,7 +287,7 @@ async function subscribe() {
   msg.style.color = '#64748b'; msg.textContent = '구독 처리 중...';
   try {
     const data = await fetchJson(`${WORKER_URL}/subscribe`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, (getSession() || {}).token ? { Authorization: 'Bearer ' + getSession().token } : {}),
       body: JSON.stringify({ email, ...currentSchool, lat: myLat, lon: myLon, grade, classNm })
     });
     if (data.ok) { msg.style.color = '#16a34a'; msg.textContent = '✅ ' + data.msg; localStorage.setItem('myEmail', email); loadAcademies(email); loadDdays(email); }
@@ -317,6 +317,15 @@ function handleLoginCallback() {
   const email = document.getElementById('loginEmailInput').value.trim() || localStorage.getItem('myEmail') || '';
   localStorage.setItem('mySession', JSON.stringify({ token: sessionToken, email }));
   history.replaceState(null, '', location.pathname + location.search);
+  fetchJson(`${WORKER_URL}/me`, { headers: { Authorization: 'Bearer ' + sessionToken } }).then(d => {
+    if (!d || !d.ok || !d.email) return;
+    localStorage.setItem('mySession', JSON.stringify({ token: sessionToken, email: d.email }));
+    localStorage.setItem('myEmail', d.email);
+    const ei = document.getElementById('emailInput'); if (ei && !ei.value) ei.value = d.email;
+    const lm = document.getElementById('loginMsg');
+    if (lm && !d.subscribed) { lm.style.color = '#16a34a'; lm.textContent = '✅ 로그인됐어! 매일 아침 메일도 받으려면 위에서 학년·반 고르고 [구독하기]를 눌러줘.'; }
+    if (typeof updateLoginUI === 'function') updateLoginUI();
+  }).catch(() => {});
 }
 
 async function logout() {
