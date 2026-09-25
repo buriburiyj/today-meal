@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#4f46e5"/><text x="50" y="72" font-size="62" text-anchor="middle">🍚</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="22" fill="#e8763a"/>
+  <text x="50" y="43" font-size="30" font-weight="800" text-anchor="middle" fill="#fff" font-family="-apple-system,'Apple SD Gothic Neo',sans-serif">오늘</text>
+  <text x="50" y="76" font-size="30" font-weight="800" text-anchor="middle" fill="#fff" font-family="-apple-system,'Apple SD Gothic Neo',sans-serif">급식</text>
+</svg>
